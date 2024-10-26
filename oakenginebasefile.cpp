@@ -299,6 +299,55 @@ LRESULT CALLBACK EventHandler(HWND Window, UINT Msg, WPARAM WParam, LPARAM LPara
     return result;
 }
 
+
+void writedata(string filename,void* ptrtomemory,int numberofbytes)
+{
+    fstream file;
+    file.open(filename,ios::out | ios::binary);
+    if(file.is_open())
+    {
+        file.write(static_cast<char*>(ptrtomemory), numberofbytes);
+        file.close();
+    }
+    else
+    {
+        cout << "ERROR COULD NOT OPEN FILE Write" <<endl;
+    }
+}   
+
+
+void appenddata(string filename,void * ptrtomemory,int numberofbytes)
+{
+    fstream file;
+    file.open(filename,ios::app | ios::binary);
+    if(file.is_open())
+    {
+        file.write(static_cast<char*>(ptrtomemory), numberofbytes);
+        file.close();
+    }
+    else
+    {
+        cout << "ERROR COULD NOT OPEN FILE Append" <<endl;
+    }
+}
+
+
+void readdata(string filename, void* ptrwheredatawillberead, int numberofbytes)
+{
+    fstream file;
+    file.open(filename, ios::in | ios::binary);
+    if(file.is_open())
+    {
+        file.read(static_cast<char*>(ptrwheredatawillberead), numberofbytes);
+        file.close();
+    }
+    else
+    {
+        cout << "ERROR: Could not open file for reading." << endl;
+    }
+}
+
+
 // 5 precision
 bool probability(float p)
 {
