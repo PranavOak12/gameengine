@@ -56,28 +56,29 @@ enum Key
     KEY_Y = 'Y',
     KEY_Z = 'Z',
 
-    KEY_SHIFT = VK_SHIFT,  
-    KEY_CTRL = VK_CONTROL, 
-    KEY_ALT = VK_MENU,     
+    KEY_SHIFT = VK_SHIFT,
+    KEY_CTRL = VK_CONTROL,
+    KEY_ALT = VK_MENU,
 
-    
-    KEY_SPACE = VK_SPACE,  
-    KEY_ESCAPE = VK_ESCAPE, 
-    KEY_ENTER = VK_RETURN,  
-    KEY_COUNT = 256         
+    KEY_SPACE = VK_SPACE,
+    KEY_ESCAPE = VK_ESCAPE,
+    KEY_ENTER = VK_RETURN,
+    KEY_COUNT = 256
 };
 
-
-
-struct Mouse 
+struct Mouse
 {
     bool buttonsclicked[3];
     bool buttonsheld[3];
     bool buttonreleased[3];
-    int x;          
-    int y;    
+    int x = 0;
+    int y = 0;
+    void ResetMouseStates()
+    {
+        memset(buttonsclicked, 0, sizeof(buttonsclicked));
+        memset(buttonreleased, 0, sizeof(buttonreleased));
+    }
 };
-
 
 bool KeyPressed[KEY_COUNT] = {false};
 bool KeyHeld[KEY_COUNT] = {false};
@@ -88,19 +89,16 @@ static HDC GlobalDeviceContext;
 static bool IsRunning;
 static OffScreenBuffer Buffer01;
 
-
 int widthofpixel = 1;
 int heightofpixel = 1;
 int widthofwindowinpixel = 880;
 int heightofwindowinpixel = 880;
-
 
 uint32_t GetColorByRGBA(int red, int green, int blue, int alpha = 0)
 {
     uint32_t color = blue | (green << 8) | (red << 16) | (alpha << 24);
     return color;
 }
-
 
 void SetPixel(OffScreenBuffer &Buffer, int x, int y, uint32_t color)
 {
@@ -110,20 +108,18 @@ void SetPixel(OffScreenBuffer &Buffer, int x, int y, uint32_t color)
     *pixel = color;
 }
 
-
-
 void RandomColor(OffScreenBuffer &Buffer)
 {
-    for(int i = 0;i < Buffer.Height;i++)
-    {  
-        for(int j = 0; j<Buffer.Width;j++)
+    for (int i = 0; i < Buffer.Height; i++)
+    {
+        for (int j = 0; j < Buffer.Width; j++)
         {
-            uint8_t blue,red,green;
-            blue = rand()%256;
-            green = rand()%256;
-            red = rand()%256;
-            uint32_t color = GetColorByRGBA(red,green,blue);
-            SetPixel(Buffer01,j,i,color);
+            uint8_t blue, red, green;
+            blue = rand() % 256;
+            green = rand() % 256;
+            red = rand() % 256;
+            uint32_t color = GetColorByRGBA(red, green, blue);
+            SetPixel(Buffer01, j, i, color);
         }
     }
 }
@@ -143,15 +139,11 @@ void DRect(OffScreenBuffer &Buffer, int x, int y, int width, int height, uint32_
 
 void DrawCircle()
 {
-
 }
 
 void DrawLine()
 {
-
 }
-
-
 
 void ClearBuffer(OffScreenBuffer &Buffer)
 {
@@ -160,12 +152,11 @@ void ClearBuffer(OffScreenBuffer &Buffer)
     {
         for (int j = 0; j < Buffer.Width; j++)
         {
-            *(pixel + j) = 0; 
+            *(pixel + j) = 0;
         }
         pixel += Buffer.Width;
     }
 }
-
 
 void ResizeDIBSection(OffScreenBuffer &Buffer, int Width, int Height)
 {
@@ -188,8 +179,8 @@ void ResizeDIBSection(OffScreenBuffer &Buffer, int Width, int Height)
 void UpdateFullWindow(HDC dc, WindowD dimensions, OffScreenBuffer &buffer)
 {
     StretchDIBits(dc,
-                  0, 0, dimensions.width, dimensions.height, 
-                  0, 0, buffer.Width, buffer.Height,
+                0, 0, dimensions.width, dimensions.height,
+                0, 0, buffer.Width, buffer.Height,
                   buffer.Memory, &buffer.Info, DIB_RGB_COLORS, SRCCOPY);
 }
 
@@ -200,6 +191,7 @@ WindowD GetWindowD(RECT *WindowRect)
     result.width = WindowRect->right - WindowRect->left;
     return result;
 }
+
 
 LRESULT CALLBACK EventHandler(HWND Window, UINT Msg, WPARAM WParam, LPARAM LParam)
 {
@@ -247,7 +239,7 @@ LRESULT CALLBACK EventHandler(HWND Window, UINT Msg, WPARAM WParam, LPARAM LPara
     {
         if (WParam < KEY_COUNT)
         {
-            if((LParam & (1 << 30)) == 0)
+            if ((LParam & (1 << 30)) == 0)
             {
                 KeyPressed[WParam] = true;
             }
@@ -259,10 +251,43 @@ LRESULT CALLBACK EventHandler(HWND Window, UINT Msg, WPARAM WParam, LPARAM LPara
     {
         if (WParam < KEY_COUNT)
         {
-            KeyPressed[WParam] = false;   
-            KeyHeld[WParam] = false;      
+            KeyPressed[WParam] = false;
+            KeyHeld[WParam] = false;
             KeyReleased[WParam] = true;
         }
+        break;
+    }
+    case WM_LBUTTONDOWN:
+    {
+
+        CurrentMouseState.buttonsclicked[0] = true;
+        CurrentMouseState.buttonsheld[0] = true;
+        break; 
+
+    }
+    case WM_LBUTTONUP:
+    {
+        
+        CurrentMouseState.buttonreleased[0] = true;
+        CurrentMouseState.buttonsheld[0] = false;
+        break;
+    }
+    case WM_RBUTTONDOWN:
+    {
+        CurrentMouseState.buttonsclicked[1] = true;
+        CurrentMouseState.buttonsheld[1] = true;
+        break;
+    }
+    case WM_RBUTTONUP:
+    {
+        CurrentMouseState.buttonreleased[1] = true;
+        CurrentMouseState.buttonsheld[1] = false;
+        break;
+    }
+    case WM_MOUSEMOVE:
+    {
+        CurrentMouseState.x = LOWORD(LParam);
+        CurrentMouseState.y = HIWORD(LParam);
         break;
     }
     default:
@@ -274,38 +299,35 @@ LRESULT CALLBACK EventHandler(HWND Window, UINT Msg, WPARAM WParam, LPARAM LPara
     return result;
 }
 
-//5 precision
+// 5 precision
 bool probability(float p)
 {
-    int comp = p*100000;
+    int comp = p * 100000;
     int randomnum = abs(rand() % 1000000);
     return (randomnum <= comp);
 }
 
-
 struct GameState
 {
-    //define game variables
+    // define game variables
 };
 
 // Singleton pattern
-GameState& GetGameState()
+GameState &GetGameState()
 {
     static GameState state;
     return state;
 }
 
-
-
 void gameinit()
 {
-    //game init
+    // game init
 }
-
 
 void updatebuffer()
 {
-    //event handler
+    // event handler
+    CurrentMouseState.ResetMouseStates();
     memset(KeyPressed, 0, sizeof(KeyPressed));
     memset(KeyReleased, 0, sizeof(KeyReleased));
 }
@@ -320,7 +342,7 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR StartCommand
     WindowClass.lpszClassName = "OakEngineWindowClass";
     if (RegisterClassA(&WindowClass))
     {
-        HWND WindowHandle = CreateWindowExA(0, WindowClass.lpszClassName, "OakEngine",WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, 0, 0, heightofwindowinpixel * heightofpixel, widthofwindowinpixel * widthofpixel, 0, 0, Instance, 0);
+        HWND WindowHandle = CreateWindowExA(0, WindowClass.lpszClassName, "OakEngine", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, 0, 0, heightofwindowinpixel * heightofpixel, widthofwindowinpixel * widthofpixel, 0, 0, Instance, 0);
         if (WindowHandle)
         {
             gameinit();
