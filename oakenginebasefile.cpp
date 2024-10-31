@@ -1,6 +1,4 @@
 #include <bits/stdc++.h>
-#include <thread>
-#include <chrono>
 #include <windows.h>
 using namespace std;
 
@@ -247,84 +245,6 @@ void DrawFilledCircle(int16_t xc, int16_t yc, int16_t radius, uint32_t color)
         }
     }
 }
-
-// my approach to drawline
-// am thinking of taking gradient then render the line like lets suppose 2 points are 0,0 and 10 , 20 so gradient is 2 so i will color 2 pixels then change y and when gradient is not a perfect natural number i will take modulo and distribute extras equally
-// like for example if we have 0 , 0 and 10 , 25 i will render 2 pixels of 7 for each x i will render 2 pixels and for some x i will render 3 and these 3 pixeled x's will be distributed uniformly
-// https://www.youtube.com/watch?v=RGB-wlatStc and below algorithm is similar to that its just simple and easy to implement  Bresenhams algo
-// althought your logic is bad big complex not efficient but it was perfect approach for nice lines and you also did handle the float part
-// there is some error in modulo part but now we will use readymade bresenhams algo
-//  void DrawLine(int16_t x1, int16_t y1,int16_t x2,int16_t y2,uint32_t lcolor)
-//  {
-//      //drawing line from x1y1 to x2y2
-//      int16_t dy,dx,incx,incy,modulo,step,uniformdividemodulo;
-//      dy = abs(y2-y1) + 1;
-//      dx = abs(x2-x1) + 1;
-//      incy = (y2 > y1) ? 1 : -1;
-//      incx = (x2 > x1) ? 1 : -1;
-//      if(dy > dx)
-//      {
-//          step = dy/dx;
-//          modulo = dy%dx;
-//          uniformdividemodulo = (modulo == 0) ? 0 : (dy - modulo)/ modulo;
-//          int tempuniform = uniformdividemodulo;
-//          int stepsizen = step;
-//          int xmov = x1;
-//          for(int i = y1;i != y2+incy;)
-//          {
-//              if(!stepsizen)
-//              {
-//                  stepsizen = step;
-//                  if((modulo) and (!uniformdividemodulo))
-//                  {
-//                      uniformdividemodulo = tempuniform;
-//                      stepsizen++;
-//                      modulo--;
-//                  }
-//                  xmov += incx;
-//                  uniformdividemodulo--;
-//              }
-//              else
-//              {
-//                  stepsizen--;
-//                  SetPixel(Buffer01,xmov,i,lcolor);
-//                  cout << xmov << " " << i <<endl;
-//                  i += incy;
-//              }
-//          }
-//      }
-//      else
-//      {
-//          step = dx/dy;
-//          modulo = dx%dy;
-//          uniformdividemodulo = (modulo == 0) ? 0 : (dx - modulo)/ modulo;
-//          int tempuniform = uniformdividemodulo;
-//          int stepsizen = step;
-//          int ymov = y1;
-//          for(int i = x1;i != x2+incx;)
-//          {
-//              if(!stepsizen)
-//              {
-//                  stepsizen = step;
-//                  if((modulo) and (!uniformdividemodulo))
-//                  {
-//                      uniformdividemodulo = tempuniform;
-//                      stepsizen++;
-//                      modulo--;
-//                  }
-//                  ymov += incy;
-//                  uniformdividemodulo--;
-//              }
-//              else
-//              {
-//                  stepsizen--;
-//                  SetPixel(Buffer01,i,ymov,lcolor);
-//                  cout << i << " " << ymov <<endl;
-//                  i+=incx;
-//              }
-//          }
-//      }
-//  }
 
 void DrawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint32_t color)
 {
@@ -591,7 +511,7 @@ void gameinit()
     // game init
 }
 
-void updatebuffer()
+void updatebuffer(float dt)
 {
     // event handler
     CurrentMouseState.ResetMouseStates();
@@ -615,8 +535,11 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR StartCommand
             gameinit();
             IsRunning = true;
             MSG Message;
+            auto lastTime = std::chrono::high_resolution_clock::now();
+            float deltaTime = 0.0f;
             while (IsRunning)
             {
+                
                 while (PeekMessageW(&Message, 0, 0, 0, PM_REMOVE))
                 {
                     if (Message.message == WM_QUIT)
@@ -626,7 +549,10 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR StartCommand
                     TranslateMessage(&Message);
                     DispatchMessageA(&Message);
                 }
-                updatebuffer(/*elapsed time*/);
+                auto currentTime = std::chrono::high_resolution_clock::now();
+                deltaTime = std::chrono::duration<float>(currentTime - lastTime).count();
+                lastTime = currentTime;
+                updatebuffer(deltaTime);
                 RECT Rectangle;
                 GetClientRect(WindowHandle, &Rectangle);
                 WindowD Dimensions = GetWindowD(&Rectangle);
