@@ -1,5 +1,7 @@
-#include <windows.h>
 #include <bits/stdc++.h>
+#include <thread>
+#include <chrono>
+#include <windows.h>
 using namespace std;
 
 struct OffScreenBuffer
@@ -89,10 +91,10 @@ static HDC GlobalDeviceContext;
 static bool IsRunning;
 static OffScreenBuffer Buffer01;
 
-int widthofpixel = 1;
-int heightofpixel = 1;
-int widthofwindowinpixel = 880;
-int heightofwindowinpixel = 880;
+int widthofpixel = 5;
+int heightofpixel = 5;
+int widthofwindowinpixel = 100;
+int heightofwindowinpixel = 100;
 
 uint32_t GetColorByRGBA(int red, int green, int blue, int alpha = 0)
 {
@@ -137,12 +139,234 @@ void DRect(OffScreenBuffer &Buffer, int x, int y, int width, int height, uint32_
     }
 }
 
-void DrawCircle()
+pair<int, int> ScreenToBitmap(int32_t x, int32_t y)
 {
+    if (x < 0 || y < 0 || x >= widthofwindowinpixel || y >= heightofwindowinpixel)
+    {
+        return make_pair(-1, -1);
+    }
+    int bitmapX = x / widthofpixel;
+    int bitmapY = y / heightofpixel;
+    return make_pair(bitmapX, bitmapY);
 }
 
-void DrawLine()
+pair<int, int> BitmapToScreen(int32_t x, int32_t y)
 {
+    if (x < 0 || y < 0 || x >= Buffer01.Width || y >= Buffer01.Height)
+    {
+        return make_pair(-1, -1);
+    }
+    int screenX = x * widthofpixel;
+    int screenY = y * heightofpixel;
+    return make_pair(screenX, screenY);
+}
+
+// drawcircle if you think about symmetry you can just compute 1/2 part of 1/4th part or 1/8th part but we will choose 1/8th because in 1/2 and 1/4th we have many options but in cacl 1/8th part we are sure that we have to move one coordinate and there are only 2 choices of 2nd coordinate so we calc 1/8th part with some algo on internet and then draw whole part
+
+void DrawCircle(int16_t xc, int16_t yc, int16_t radius, uint32_t color)
+{
+    // Start at the top of the circle
+    int16_t x = 0;
+    int16_t y = radius;
+
+    // Initial decision parameter
+    // d = decision parameter
+    // Starts with 3 - 2r to handle initial pixel placement
+    int16_t d = 3 - 2 * radius;
+
+    while (y >= x)
+    {
+        // Draw 8 symmetric points in each octant
+
+        // First Octant Points (x,y) and symmetric points
+        SetPixel(Buffer01, xc + x, yc + y, color); // Octant 1
+        SetPixel(Buffer01, xc - x, yc + y, color); // Octant 4
+        SetPixel(Buffer01, xc + x, yc - y, color); // Octant 8
+        SetPixel(Buffer01, xc - x, yc - y, color); // Octant 5
+
+        // Second Octant Points (y,x) and symmetric points
+        SetPixel(Buffer01, xc + y, yc + x, color); // Octant 2
+        SetPixel(Buffer01, xc - y, yc + x, color); // Octant 3
+        SetPixel(Buffer01, xc + y, yc - x, color); // Octant 7
+        SetPixel(Buffer01, xc - y, yc - x, color); // Octant 6
+
+        // Increment x coordinate
+        x++;
+
+        // Decide whether to move y coordinate
+        if (d > 0)
+        {
+            // If decision parameter is positive,
+            // move diagonally down
+            y--;
+
+            // Update decision parameter
+            // Uses a more complex formula to track circle boundary
+            d = d + 4 * (x - y) + 10;
+        }
+        else
+        {
+            // If decision parameter is negative or zero,
+            // move straight horizontally
+            d = d + 4 * x + 6;
+        }
+    }
+}
+
+// Variation for filled circle
+void DrawFilledCircle(int16_t xc, int16_t yc, int16_t radius, uint32_t color)
+{
+    int16_t x = 0;
+    int16_t y = radius;
+    int16_t d = 3 - 2 * radius;
+
+    while (y >= x)
+    {
+        for (int16_t i = xc - x; i <= xc + x; i++)
+        {
+            SetPixel(Buffer01, i, yc + y, color);
+            SetPixel(Buffer01, i, yc - y, color);
+        }
+
+        for (int16_t i = xc - y; i <= xc + y; i++)
+        {
+            SetPixel(Buffer01, i, yc + x, color);
+            SetPixel(Buffer01, i, yc - x, color);
+        }
+
+        x++;
+
+        if (d > 0)
+        {
+            y--;
+            d = d + 4 * (x - y) + 10;
+        }
+        else
+        {
+            d = d + 4 * x + 6;
+        }
+    }
+}
+
+// my approach to drawline
+// am thinking of taking gradient then render the line like lets suppose 2 points are 0,0 and 10 , 20 so gradient is 2 so i will color 2 pixels then change y and when gradient is not a perfect natural number i will take modulo and distribute extras equally
+// like for example if we have 0 , 0 and 10 , 25 i will render 2 pixels of 7 for each x i will render 2 pixels and for some x i will render 3 and these 3 pixeled x's will be distributed uniformly
+// https://www.youtube.com/watch?v=RGB-wlatStc and below algorithm is similar to that its just simple and easy to implement  Bresenhams algo
+// althought your logic is bad big complex not efficient but it was perfect approach for nice lines and you also did handle the float part
+// there is some error in modulo part but now we will use readymade bresenhams algo
+//  void DrawLine(int16_t x1, int16_t y1,int16_t x2,int16_t y2,uint32_t lcolor)
+//  {
+//      //drawing line from x1y1 to x2y2
+//      int16_t dy,dx,incx,incy,modulo,step,uniformdividemodulo;
+//      dy = abs(y2-y1) + 1;
+//      dx = abs(x2-x1) + 1;
+//      incy = (y2 > y1) ? 1 : -1;
+//      incx = (x2 > x1) ? 1 : -1;
+//      if(dy > dx)
+//      {
+//          step = dy/dx;
+//          modulo = dy%dx;
+//          uniformdividemodulo = (modulo == 0) ? 0 : (dy - modulo)/ modulo;
+//          int tempuniform = uniformdividemodulo;
+//          int stepsizen = step;
+//          int xmov = x1;
+//          for(int i = y1;i != y2+incy;)
+//          {
+//              if(!stepsizen)
+//              {
+//                  stepsizen = step;
+//                  if((modulo) and (!uniformdividemodulo))
+//                  {
+//                      uniformdividemodulo = tempuniform;
+//                      stepsizen++;
+//                      modulo--;
+//                  }
+//                  xmov += incx;
+//                  uniformdividemodulo--;
+//              }
+//              else
+//              {
+//                  stepsizen--;
+//                  SetPixel(Buffer01,xmov,i,lcolor);
+//                  cout << xmov << " " << i <<endl;
+//                  i += incy;
+//              }
+//          }
+//      }
+//      else
+//      {
+//          step = dx/dy;
+//          modulo = dx%dy;
+//          uniformdividemodulo = (modulo == 0) ? 0 : (dx - modulo)/ modulo;
+//          int tempuniform = uniformdividemodulo;
+//          int stepsizen = step;
+//          int ymov = y1;
+//          for(int i = x1;i != x2+incx;)
+//          {
+//              if(!stepsizen)
+//              {
+//                  stepsizen = step;
+//                  if((modulo) and (!uniformdividemodulo))
+//                  {
+//                      uniformdividemodulo = tempuniform;
+//                      stepsizen++;
+//                      modulo--;
+//                  }
+//                  ymov += incy;
+//                  uniformdividemodulo--;
+//              }
+//              else
+//              {
+//                  stepsizen--;
+//                  SetPixel(Buffer01,i,ymov,lcolor);
+//                  cout << i << " " << ymov <<endl;
+//                  i+=incx;
+//              }
+//          }
+//      }
+//  }
+
+void DrawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint32_t color)
+{
+    bool steep = abs(y2 - y1) > abs(x2 - x1);
+
+    if (steep)
+    {
+        swap(x1, y1);
+        swap(x2, y2);
+    }
+
+    if (x1 > x2)
+    {
+        swap(x1, x2);
+        swap(y1, y2);
+    }
+
+    int16_t dx = x2 - x1;
+    int16_t dy = abs(y2 - y1);
+    int16_t error = dx / 2;
+
+    int16_t y_step = (y1 < y2) ? 1 : -1;
+    int16_t y = y1;
+
+    for (int16_t x = x1; x <= x2; x++)
+    {
+        if (steep)
+        {
+            SetPixel(Buffer01, y, x, color);
+        }
+        else
+        {
+            SetPixel(Buffer01, x, y, color);
+        }
+
+        error -= dy;
+        if (error < 0)
+        {
+            y += y_step;
+            error += dx;
+        }
+    }
 }
 
 void ClearBuffer(OffScreenBuffer &Buffer)
@@ -179,8 +403,8 @@ void ResizeDIBSection(OffScreenBuffer &Buffer, int Width, int Height)
 void UpdateFullWindow(HDC dc, WindowD dimensions, OffScreenBuffer &buffer)
 {
     StretchDIBits(dc,
-                0, 0, dimensions.width, dimensions.height,
-                0, 0, buffer.Width, buffer.Height,
+                  0, 0, dimensions.width, dimensions.height,
+                  0, 0, buffer.Width, buffer.Height,
                   buffer.Memory, &buffer.Info, DIB_RGB_COLORS, SRCCOPY);
 }
 
@@ -191,7 +415,6 @@ WindowD GetWindowD(RECT *WindowRect)
     result.width = WindowRect->right - WindowRect->left;
     return result;
 }
-
 
 LRESULT CALLBACK EventHandler(HWND Window, UINT Msg, WPARAM WParam, LPARAM LParam)
 {
@@ -262,12 +485,11 @@ LRESULT CALLBACK EventHandler(HWND Window, UINT Msg, WPARAM WParam, LPARAM LPara
 
         CurrentMouseState.buttonsclicked[0] = true;
         CurrentMouseState.buttonsheld[0] = true;
-        break; 
-
+        break;
     }
     case WM_LBUTTONUP:
     {
-        
+
         CurrentMouseState.buttonreleased[0] = true;
         CurrentMouseState.buttonsheld[0] = false;
         break;
@@ -299,46 +521,43 @@ LRESULT CALLBACK EventHandler(HWND Window, UINT Msg, WPARAM WParam, LPARAM LPara
     return result;
 }
 
-
-void writedata(string filename,void* ptrtomemory,int numberofbytes)
+void writedata(string filename, void *ptrtomemory, int numberofbytes)
 {
     fstream file;
-    file.open(filename,ios::out | ios::binary);
-    if(file.is_open())
+    file.open(filename, ios::out | ios::binary);
+    if (file.is_open())
     {
-        file.write(static_cast<char*>(ptrtomemory), numberofbytes);
+        file.write(static_cast<char *>(ptrtomemory), numberofbytes);
         file.close();
     }
     else
     {
-        cout << "ERROR COULD NOT OPEN FILE Write" <<endl;
-    }
-}   
-
-
-void appenddata(string filename,void * ptrtomemory,int numberofbytes)
-{
-    fstream file;
-    file.open(filename,ios::app | ios::binary);
-    if(file.is_open())
-    {
-        file.write(static_cast<char*>(ptrtomemory), numberofbytes);
-        file.close();
-    }
-    else
-    {
-        cout << "ERROR COULD NOT OPEN FILE Append" <<endl;
+        cout << "ERROR COULD NOT OPEN FILE Write" << endl;
     }
 }
 
+void appenddata(string filename, void *ptrtomemory, int numberofbytes)
+{
+    fstream file;
+    file.open(filename, ios::app | ios::binary);
+    if (file.is_open())
+    {
+        file.write(static_cast<char *>(ptrtomemory), numberofbytes);
+        file.close();
+    }
+    else
+    {
+        cout << "ERROR COULD NOT OPEN FILE Append" << endl;
+    }
+}
 
-void readdata(string filename, void* ptrwheredatawillberead, int numberofbytes)
+void readdata(string filename, void *ptrwheredatawillberead, int numberofbytes)
 {
     fstream file;
     file.open(filename, ios::in | ios::binary);
-    if(file.is_open())
+    if (file.is_open())
     {
-        file.read(static_cast<char*>(ptrwheredatawillberead), numberofbytes);
+        file.read(static_cast<char *>(ptrwheredatawillberead), numberofbytes);
         file.close();
     }
     else
@@ -346,7 +565,6 @@ void readdata(string filename, void* ptrwheredatawillberead, int numberofbytes)
         cout << "ERROR: Could not open file for reading." << endl;
     }
 }
-
 
 // 5 precision
 bool probability(float p)
@@ -426,3 +644,5 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR StartCommand
     }
     return 0;
 }
+
+// todo add serialisation for non linear data structures

@@ -411,7 +411,27 @@ void updatebuffer()
         DRect(Buffer01, 0, 0, 25, 25, GetColorByRGBA(30, 90, 234));
         DRect(Buffer01, 855, 855, 25, 25, GetColorByRGBA(30, 90, 234));
     }
-    if(KeyHeld[KEY_S])
+    if(KeyPressed[KEY_S])
+    {
+        if((!gameState.lastprocessed.empty()) and (gameState.totalvisited != 35*35))
+        {
+            coord top35 = get35coord(gameState.lastprocessed.top().xposn,gameState.lastprocessed.top().yposn);
+            coord newcomer = getrandomneighbour(top35.xposn,top35.yposn,gameState.visited);
+            coord newcomer35 = get35coord(newcomer.xposn,newcomer.yposn);
+            if((newcomer.xposn != -1) and (newcomer.yposn != -1))
+            {
+                link2coords(gameState.lastprocessed.top(),newcomer);
+                gameState.visited[newcomer35.xposn][newcomer35.yposn] = 1;
+                gameState.totalvisited++;
+                gameState.lastprocessed.push(newcomer);
+            }
+            else
+            {
+                gameState.lastprocessed.pop();
+            }
+        }
+    }
+    if(KeyHeld[KEY_F])
     {
         if((!gameState.lastprocessed.empty()) and (gameState.totalvisited != 35*35))
         {

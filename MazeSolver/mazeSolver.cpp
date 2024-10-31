@@ -108,6 +108,8 @@ void SetPixel(OffScreenBuffer &Buffer, int x, int y, uint32_t color)
     *pixel = color;
 }
 
+
+
 void RandomColor(OffScreenBuffer &Buffer)
 {
     for (int i = 0; i < Buffer.Height; i++)
@@ -139,10 +141,12 @@ void DRect(OffScreenBuffer &Buffer, int x, int y, int width, int height, uint32_
 
 void DrawCircle()
 {
+
 }
 
-void DrawLine()
+void DrawLine(int32_t x1, int32_t y1,int32_t x2,int32_t y2,uint32_t color)
 {
+
 }
 
 void ClearBuffer(OffScreenBuffer &Buffer)
@@ -309,7 +313,7 @@ bool probability(float p)
 
 struct GameState
 {
-    // define game variables
+    
 };
 
 // Singleton pattern
