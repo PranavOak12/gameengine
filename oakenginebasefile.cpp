@@ -1,5 +1,6 @@
 #include <bits/stdc++.h>
 #include <windows.h>
+
 using namespace std;
 
 struct OffScreenBuffer
@@ -80,6 +81,13 @@ struct Mouse
     }
 };
 
+struct sprite
+{
+    int32_t height = 0;
+    int32_t width = 0;
+    uint32_t *ptrtoimgdata = nullptr;
+};
+
 bool KeyPressed[KEY_COUNT] = {false};
 bool KeyHeld[KEY_COUNT] = {false};
 bool KeyReleased[KEY_COUNT] = {false};
@@ -89,23 +97,67 @@ static HDC GlobalDeviceContext;
 static bool IsRunning;
 static OffScreenBuffer Buffer01;
 
-int widthofpixel = 5;
-int heightofpixel = 5;
-int widthofwindowinpixel = 100;
-int heightofwindowinpixel = 100;
+int widthofpixel = 1;
+int heightofpixel = 1;
+int widthofwindowinpixel = 800;
+int heightofwindowinpixel = 800;
 
-uint32_t GetColorByRGBA(int red, int green, int blue, int alpha = 0)
+uint32_t GetColorByRGBA(int red, int green, int blue, int alpha = 255)
 {
     uint32_t color = blue | (green << 8) | (red << 16) | (alpha << 24);
     return color;
 }
 
-void SetPixel(OffScreenBuffer &Buffer, int x, int y, uint32_t color)
+void SetPixel(OffScreenBuffer &Buffer, int x, int y, uint32_t &color)
 {
+    if (x < 0 || x >= Buffer.Width || y < 0 || y >= Buffer.Height)
+    {
+        return; 
+    }
+
+    uint32_t *pixel = (uint32_t *)Buffer.Memory;
+    pixel += y * Buffer.Width + x;
+
+    uint8_t *extract = (uint8_t *)pixel;
+    uint8_t bufferblue = *(extract++);
+    uint8_t buffergreen = *(extract++);
+    uint8_t bufferred = *(extract++);
+    uint8_t bufferalpha = 255; 
+
+    uint8_t colorblue = color & 0xff;
+    uint8_t colorgreen = (color >> 8) & 0xff;
+    uint8_t colorred = (color >> 16) & 0xff;
+    uint8_t coloralpha = (color >> 24) & 0xff;
+
+    float alpha = coloralpha / 255.0f;
+
+    uint8_t finalcolorblue = (uint8_t)((alpha * colorblue) + ((1 - alpha) * bufferblue));
+    uint8_t finalcolorgreen = (uint8_t)((alpha * colorgreen) + ((1 - alpha) * buffergreen));
+    uint8_t finalcolorred = (uint8_t)((alpha * colorred) + ((1 - alpha) * bufferred));
+
+    uint8_t finalcoloralpha = 255; 
+
+    uint32_t finalcolor = (finalcoloralpha << 24) | (finalcolorred << 16) | (finalcolorgreen << 8) | finalcolorblue;
+
+    *pixel = finalcolor;
+}
+
+
+
+
+
+void SetPixelRGBA(OffScreenBuffer &Buffer, int x, int y, uint32_t &color)
+{
+    uint8_t r = (color >> 24) & 0xFF;  
+    uint8_t g = (color >> 16) & 0xFF;  
+    uint8_t b = (color >> 8) & 0xFF;   
+    uint8_t a = color & 0xFF;          
+
+    uint32_t bgraColor = (b << 24) | (g << 16) | (r << 8) | a;
     uint32_t *pixel = (uint32_t *)Buffer.Memory;
     pixel += y * Buffer.Width;
     pixel += x;
-    *pixel = color;
+    *pixel = bgraColor;
 }
 
 void RandomColor(OffScreenBuffer &Buffer)
@@ -137,95 +189,49 @@ void DRect(OffScreenBuffer &Buffer, int x, int y, int width, int height, uint32_
     }
 }
 
-pair<int, int> ScreenToBitmap(int32_t x, int32_t y)
-{
-    if (x < 0 || y < 0 || x >= widthofwindowinpixel || y >= heightofwindowinpixel)
-    {
-        return make_pair(-1, -1);
-    }
-    int bitmapX = x / widthofpixel;
-    int bitmapY = y / heightofpixel;
-    return make_pair(bitmapX, bitmapY);
-}
-
-pair<int, int> BitmapToScreen(int32_t x, int32_t y)
-{
-    if (x < 0 || y < 0 || x >= Buffer01.Width || y >= Buffer01.Height)
-    {
-        return make_pair(-1, -1);
-    }
-    int screenX = x * widthofpixel;
-    int screenY = y * heightofpixel;
-    return make_pair(screenX, screenY);
-}
-
-// drawcircle if you think about symmetry you can just compute 1/2 part of 1/4th part or 1/8th part but we will choose 1/8th because in 1/2 and 1/4th we have many options but in cacl 1/8th part we are sure that we have to move one coordinate and there are only 2 choices of 2nd coordinate so we calc 1/8th part with some algo on internet and then draw whole part
-
 void DrawCircle(int16_t xc, int16_t yc, int16_t radius, uint32_t color)
 {
-    // Start at the top of the circle
     int16_t x = 0;
     int16_t y = radius;
+    int16_t d = 1 - radius;
 
-    // Initial decision parameter
-    // d = decision parameter
-    // Starts with 3 - 2r to handle initial pixel placement
-    int16_t d = 3 - 2 * radius;
-
-    while (y >= x)
+    while (x <= y)
     {
-        // Draw 8 symmetric points in each octant
+        SetPixel(Buffer01, xc + x, yc + y, color);
+        SetPixel(Buffer01, xc - x, yc + y, color);
+        SetPixel(Buffer01, xc + x, yc - y, color);
+        SetPixel(Buffer01, xc - x, yc - y, color);
+        SetPixel(Buffer01, xc + y, yc + x, color);
+        SetPixel(Buffer01, xc - y, yc + x, color);
+        SetPixel(Buffer01, xc + y, yc - x, color);
+        SetPixel(Buffer01, xc - y, yc - x, color);
 
-        // First Octant Points (x,y) and symmetric points
-        SetPixel(Buffer01, xc + x, yc + y, color); // Octant 1
-        SetPixel(Buffer01, xc - x, yc + y, color); // Octant 4
-        SetPixel(Buffer01, xc + x, yc - y, color); // Octant 8
-        SetPixel(Buffer01, xc - x, yc - y, color); // Octant 5
-
-        // Second Octant Points (y,x) and symmetric points
-        SetPixel(Buffer01, xc + y, yc + x, color); // Octant 2
-        SetPixel(Buffer01, xc - y, yc + x, color); // Octant 3
-        SetPixel(Buffer01, xc + y, yc - x, color); // Octant 7
-        SetPixel(Buffer01, xc - y, yc - x, color); // Octant 6
-
-        // Increment x coordinate
         x++;
-
-        // Decide whether to move y coordinate
-        if (d > 0)
+        if (d < 0)
         {
-            // If decision parameter is positive,
-            // move diagonally down
-            y--;
-
-            // Update decision parameter
-            // Uses a more complex formula to track circle boundary
-            d = d + 4 * (x - y) + 10;
+            d += 2 * x + 1;
         }
         else
         {
-            // If decision parameter is negative or zero,
-            // move straight horizontally
-            d = d + 4 * x + 6;
+            y--;
+            d += 2 * (x - y) + 1;
         }
     }
 }
 
-// Variation for filled circle
 void DrawFilledCircle(int16_t xc, int16_t yc, int16_t radius, uint32_t color)
 {
     int16_t x = 0;
     int16_t y = radius;
-    int16_t d = 3 - 2 * radius;
+    int16_t d = 1 - radius;
 
-    while (y >= x)
+    while (x <= y)
     {
         for (int16_t i = xc - x; i <= xc + x; i++)
         {
             SetPixel(Buffer01, i, yc + y, color);
             SetPixel(Buffer01, i, yc - y, color);
         }
-
         for (int16_t i = xc - y; i <= xc + y; i++)
         {
             SetPixel(Buffer01, i, yc + x, color);
@@ -233,18 +239,95 @@ void DrawFilledCircle(int16_t xc, int16_t yc, int16_t radius, uint32_t color)
         }
 
         x++;
-
-        if (d > 0)
+        if (d < 0)
         {
-            y--;
-            d = d + 4 * (x - y) + 10;
+            d += 2 * x + 1;
         }
         else
         {
-            d = d + 4 * x + 6;
+            y--;
+            d += 2 * (x - y) + 1;
         }
     }
 }
+
+
+sprite loadspritebmp(const string &filename) 
+{
+    sprite *NewSprite = new sprite;
+
+    ifstream bmpfile(filename, ios::binary);
+    if (!bmpfile) {
+        cout << "ERROR: LOADING THE FILE" << endl;
+        return *NewSprite;
+    }
+
+    uint16_t fileType;
+    bmpfile.read(reinterpret_cast<char*>(&fileType), sizeof(fileType));
+    if (fileType != 0x4D42) {  
+        cout << "ERROR: Not a valid BMP file." << endl;
+        bmpfile.close();
+        return *NewSprite;
+    }
+
+    uint32_t dataOffset;
+    bmpfile.seekg(10, ios::beg);
+    bmpfile.read(reinterpret_cast<char*>(&dataOffset), sizeof(dataOffset));
+
+    int32_t width, height;
+    bmpfile.seekg(18, ios::beg);
+    bmpfile.read(reinterpret_cast<char*>(&width), sizeof(width));
+    bmpfile.read(reinterpret_cast<char*>(&height), sizeof(height));
+
+    NewSprite->width = width;
+    NewSprite->height = abs(height);
+
+    uint16_t bitDepth;
+    bmpfile.seekg(28, ios::beg);
+    bmpfile.read(reinterpret_cast<char*>(&bitDepth), sizeof(bitDepth));
+    if (bitDepth != 32) {
+        cout << "ERROR: Only 32-bit BMP files are supported." << endl;
+        bmpfile.close();
+        delete NewSprite;
+        return *NewSprite;
+    }
+
+    bmpfile.seekg(dataOffset, ios::beg);
+
+    uint32_t numPixels = width * abs(height);
+    uint32_t *pixelData = new uint32_t[numPixels];
+
+    for (int32_t y = abs(height)-1; y >= 0; y--) {
+        bmpfile.read(reinterpret_cast<char*>(pixelData + (y * width)), width * sizeof(uint32_t));
+    }
+
+    bmpfile.close();
+    NewSprite->ptrtoimgdata = pixelData;
+    cout << "LOADED IMAGE" << endl;
+
+    return *NewSprite;
+}
+
+void drawonscreen(int x, int y, sprite &spritetodraw, OffScreenBuffer &Buffer01)
+{
+    uint32_t *temppointer;
+    for (int i = 0; i < spritetodraw.height; i++)
+    {
+        temppointer = spritetodraw.ptrtoimgdata + (i * spritetodraw.width);
+        for (int j = 0; j < spritetodraw.width; j++)
+        {
+            uint32_t colorp = *temppointer;
+            temppointer++;
+            int targetx = x + j;
+            int targety = y + i;
+            if ((targetx >= 0 && targetx < Buffer01.Width) && (targety >= 0 && targety < Buffer01.Height))
+            {
+                SetPixel(Buffer01, targetx, targety, colorp);
+            }
+        }
+    }
+}
+
 
 void DrawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint32_t color)
 {
@@ -291,16 +374,16 @@ void DrawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint32_t color)
 
 void ClearBuffer(OffScreenBuffer &Buffer)
 {
-    uint32_t *pixel = (uint32_t *)Buffer.Memory;
     for (int i = 0; i < Buffer.Height; i++)
     {
         for (int j = 0; j < Buffer.Width; j++)
         {
-            *(pixel + j) = 0;
+            uint32_t blac = 0xff010101;
+            SetPixel(Buffer,j,i,blac);
         }
-        pixel += Buffer.Width;
     }
 }
+
 
 void ResizeDIBSection(OffScreenBuffer &Buffer, int Width, int Height)
 {
@@ -441,6 +524,13 @@ LRESULT CALLBACK EventHandler(HWND Window, UINT Msg, WPARAM WParam, LPARAM LPara
     return result;
 }
 
+bool probability(float p)
+{
+    int comp = p * 100000;
+    int randomnum = abs(rand() % 1000000);
+    return (randomnum <= comp);
+}
+
 void writedata(string filename, void *ptrtomemory, int numberofbytes)
 {
     fstream file;
@@ -471,13 +561,14 @@ void appenddata(string filename, void *ptrtomemory, int numberofbytes)
     }
 }
 
-void readdata(string filename, void *ptrwheredatawillberead, int numberofbytes)
+void readdata(string filename, void *&ptrwheredatawillberead, int numberofbytes)
 {
+    ptrwheredatawillberead = new char[numberofbytes];
     fstream file;
     file.open(filename, ios::in | ios::binary);
     if (file.is_open())
     {
-        file.read(static_cast<char *>(ptrwheredatawillberead), numberofbytes);
+        file.read(reinterpret_cast<char *>(ptrwheredatawillberead), numberofbytes);
         file.close();
     }
     else
@@ -486,20 +577,11 @@ void readdata(string filename, void *ptrwheredatawillberead, int numberofbytes)
     }
 }
 
-// 5 precision
-bool probability(float p)
-{
-    int comp = p * 100000;
-    int randomnum = abs(rand() % 1000000);
-    return (randomnum <= comp);
-}
-
 struct GameState
 {
-    // define game variables
+
 };
 
-// Singleton pattern
 GameState &GetGameState()
 {
     static GameState state;
@@ -508,12 +590,13 @@ GameState &GetGameState()
 
 void gameinit()
 {
-    // game init
+
 }
 
 void updatebuffer(float dt)
 {
-    // event handler
+    ClearBuffer(Buffer01);
+    GameState gs = GetGameState();
     CurrentMouseState.ResetMouseStates();
     memset(KeyPressed, 0, sizeof(KeyPressed));
     memset(KeyReleased, 0, sizeof(KeyReleased));
@@ -539,7 +622,7 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR StartCommand
             float deltaTime = 0.0f;
             while (IsRunning)
             {
-                
+
                 while (PeekMessageW(&Message, 0, 0, 0, PM_REMOVE))
                 {
                     if (Message.message == WM_QUIT)
@@ -570,5 +653,3 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR StartCommand
     }
     return 0;
 }
-
-// todo add serialisation for non linear data structures
