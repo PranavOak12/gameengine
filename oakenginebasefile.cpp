@@ -252,14 +252,14 @@ void DrawFilledCircle(int16_t xc, int16_t yc, int16_t radius, uint32_t color)
 }
 
 
-sprite loadspritebmp(const string &filename) 
+sprite* loadspritebmp(const string &filename) 
 {
-    sprite *NewSprite = new sprite;
+    sprite* NewSprite = new sprite;
 
     ifstream bmpfile(filename, ios::binary);
     if (!bmpfile) {
         cout << "ERROR: LOADING THE FILE" << endl;
-        return *NewSprite;
+        return NewSprite;
     }
 
     uint16_t fileType;
@@ -267,7 +267,7 @@ sprite loadspritebmp(const string &filename)
     if (fileType != 0x4D42) {  
         cout << "ERROR: Not a valid BMP file." << endl;
         bmpfile.close();
-        return *NewSprite;
+        return NewSprite;
     }
 
     uint32_t dataOffset;
@@ -289,7 +289,7 @@ sprite loadspritebmp(const string &filename)
         cout << "ERROR: Only 32-bit BMP files are supported." << endl;
         bmpfile.close();
         delete NewSprite;
-        return *NewSprite;
+        return nullptr;
     }
 
     bmpfile.seekg(dataOffset, ios::beg);
@@ -305,16 +305,16 @@ sprite loadspritebmp(const string &filename)
     NewSprite->ptrtoimgdata = pixelData;
     cout << "LOADED IMAGE" << endl;
 
-    return *NewSprite;
+    return NewSprite;
 }
 
-void drawonscreen(int x, int y, sprite &spritetodraw, OffScreenBuffer &Buffer01)
+void drawonscreen(int x, int y, sprite* spritetodraw, OffScreenBuffer &Buffer01)
 {
     uint32_t *temppointer;
-    for (int i = 0; i < spritetodraw.height; i++)
+    for (int i = 0; i < spritetodraw->height; i++)
     {
-        temppointer = spritetodraw.ptrtoimgdata + (i * spritetodraw.width);
-        for (int j = 0; j < spritetodraw.width; j++)
+        temppointer = spritetodraw->ptrtoimgdata + (i * spritetodraw->width);
+        for (int j = 0; j < spritetodraw->width; j++)
         {
             uint32_t colorp = *temppointer;
             temppointer++;
