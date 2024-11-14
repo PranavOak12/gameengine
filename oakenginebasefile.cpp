@@ -67,7 +67,6 @@ enum Key
     KEY_COUNT = 256
 };
 
-
 struct Mouse
 {
     bool buttonsclicked[3];
@@ -100,20 +99,20 @@ static OffScreenBuffer Buffer01;
 
 int widthofpixel = 1;
 int heightofpixel = 1;
-int widthofwindowinpixel = 800;
-int heightofwindowinpixel = 800;
+int widthofwindowinpixel = 1000;
+int heightofwindowinpixel = 1000;
 
 int screenxtobitmap(int screenxc)
 {
-    return screenxc/widthofpixel;
+    return screenxc / widthofpixel;
 }
 
 int screenytobitmap(int screenyc)
 {
-    return screenyc/heightofpixel;
+    return screenyc / heightofpixel;
 }
 
-uint32_t GetColorByRGBA(uint8_t red,uint8_t green,uint8_t blue,uint8_t alpha = 255)
+uint32_t GetColorByRGBA(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha = 255)
 {
     uint32_t color = blue | (green << 8) | (red << 16) | (alpha << 24);
     return color;
@@ -123,7 +122,7 @@ void SetPixel(OffScreenBuffer &Buffer, int x, int y, uint32_t color)
 {
     if (x < 0 || x >= Buffer.Width || y < 0 || y >= Buffer.Height)
     {
-        return; 
+        return;
     }
     uint32_t *pixel = (uint32_t *)Buffer.Memory;
     pixel += y * Buffer.Width + x;
@@ -131,7 +130,7 @@ void SetPixel(OffScreenBuffer &Buffer, int x, int y, uint32_t color)
     uint8_t bufferblue = *(extract++);
     uint8_t buffergreen = *(extract++);
     uint8_t bufferred = *(extract++);
-    uint8_t bufferalpha = 255; 
+    uint8_t bufferalpha = 255;
     uint8_t colorblue = color & 0xff;
     uint8_t colorgreen = (color >> 8) & 0xff;
     uint8_t colorred = (color >> 16) & 0xff;
@@ -140,11 +139,10 @@ void SetPixel(OffScreenBuffer &Buffer, int x, int y, uint32_t color)
     uint8_t finalcolorblue = (uint8_t)((alpha * colorblue) + ((1 - alpha) * bufferblue));
     uint8_t finalcolorgreen = (uint8_t)((alpha * colorgreen) + ((1 - alpha) * buffergreen));
     uint8_t finalcolorred = (uint8_t)((alpha * colorred) + ((1 - alpha) * bufferred));
-    uint8_t finalcoloralpha = 255; 
+    uint8_t finalcoloralpha = 255;
     uint32_t finalcolor = (finalcoloralpha << 24) | (finalcolorred << 16) | (finalcolorgreen << 8) | finalcolorblue;
     *pixel = finalcolor;
 }
-
 
 void RandomColor(OffScreenBuffer &Buffer)
 {
@@ -161,7 +159,6 @@ void RandomColor(OffScreenBuffer &Buffer)
         }
     }
 }
-
 
 void DrawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint32_t color)
 {
@@ -219,45 +216,45 @@ void DRect(OffScreenBuffer &Buffer, int x, int y, int width, int height, uint32_
     }
 }
 
-
-void DrawCircle(int16_t xc, int16_t yc, int16_t radius, uint32_t color) 
+void DrawCircle(int16_t xc, int16_t yc, int16_t radius, uint32_t color)
 {
     int x = radius;
     int y = 0;
     int p = 1 - radius;
 
-    while (x >= y) 
+    while (x >= y)
     {
-        SetPixel(Buffer01, xc + x, yc + y, color);  
-        SetPixel(Buffer01, xc + y, yc + x, color);  
-        SetPixel(Buffer01, xc - y, yc + x, color);  
-        SetPixel(Buffer01, xc - x, yc + y, color); 
-        SetPixel(Buffer01, xc - x, yc - y, color);  
-        SetPixel(Buffer01, xc - y, yc - x, color); 
-        SetPixel(Buffer01, xc + y, yc - x, color);  
-        SetPixel(Buffer01, xc + x, yc - y, color);  
+        SetPixel(Buffer01, xc + x, yc + y, color);
+        SetPixel(Buffer01, xc + y, yc + x, color);
+        SetPixel(Buffer01, xc - y, yc + x, color);
+        SetPixel(Buffer01, xc - x, yc + y, color);
+        SetPixel(Buffer01, xc - x, yc - y, color);
+        SetPixel(Buffer01, xc - y, yc - x, color);
+        SetPixel(Buffer01, xc + y, yc - x, color);
+        SetPixel(Buffer01, xc + x, yc - y, color);
 
-        y++; 
+        y++;
 
-        if (p < 0) {
+        if (p < 0)
+        {
             p += 2 * y + 1;
-        } else {
-            x--;  
+        }
+        else
+        {
+            x--;
             p += 2 * (y - x) + 1;
         }
-
     }
 }
 
-
-void DrawFilledCircle(int16_t xc, int16_t yc, int16_t radius, uint32_t color) 
+void DrawFilledCircle(int16_t xc, int16_t yc, int16_t radius, uint32_t color)
 {
-    for (int y = -radius; y <= radius; y++) {
+    for (int y = -radius; y <= radius; y++)
+    {
         int x = (int)sqrt(radius * radius - y * y);
         DrawLine(xc - x, yc + y, xc + x, yc + y, color);
         DrawLine(xc - x, yc - y, xc + x, yc - y, color);
     }
-
 }
 
 void drawlightsource(int x, int y, int16_t radius, uint32_t color)
@@ -269,18 +266,20 @@ void drawlightsource(int x, int y, int16_t radius, uint32_t color)
 
     int radius_squared = radius * radius;
 
-    for (int i = -radius; i <= radius; i++) {
-        for (int j = -radius; j <= radius; j++) {
+    for (int i = -radius; i <= radius; i++)
+    {
+        for (int j = -radius; j <= radius; j++)
+        {
             int dist_squared = i * i + j * j;
 
-            if (dist_squared <= radius_squared) {
+            if (dist_squared <= radius_squared)
+            {
                 uint8_t alpha = alpham - (uint8_t)(alpham * sqrt(dist_squared) / radius);
-                
+
                 alpha = (alpha > alpham) ? alpham : alpha;
 
                 SetPixel(Buffer01, x + i, y + j, GetColorByRGBA(redpart, greenpart, bluepart, alpha));
             }
-
         }
     }
 }
@@ -365,50 +364,6 @@ void drawonscreen(int x, int y, sprite *spritetodraw, OffScreenBuffer &Buffer01)
     }
 }
 
-
-void DrawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint32_t color)
-{
-    bool steep = abs(y2 - y1) > abs(x2 - x1);
-
-    if (steep)
-    {
-        swap(x1, y1);
-        swap(x2, y2);
-    }
-
-    if (x1 > x2)
-    {
-        swap(x1, x2);
-        swap(y1, y2);
-    }
-
-    int16_t dx = x2 - x1;
-    int16_t dy = abs(y2 - y1);
-    int16_t error = dx / 2;
-
-    int16_t y_step = (y1 < y2) ? 1 : -1;
-    int16_t y = y1;
-
-    for (int16_t x = x1; x <= x2; x++)
-    {
-        if (steep)
-        {
-            SetPixel(Buffer01, y, x, color);
-        }
-        else
-        {
-            SetPixel(Buffer01, x, y, color);
-        }
-
-        error -= dy;
-        if (error < 0)
-        {
-            y += y_step;
-            error += dx;
-        }
-    }
-}
-
 void ClearBuffer(OffScreenBuffer &Buffer)
 {
     for (int i = 0; i < Buffer.Height; i++)
@@ -420,7 +375,6 @@ void ClearBuffer(OffScreenBuffer &Buffer)
         }
     }
 }
-
 
 void ResizeDIBSection(OffScreenBuffer &Buffer, int Width, int Height)
 {
@@ -615,7 +569,6 @@ void readdata(string filename, void *&ptrwheredatawillberead, int numberofbytes)
 
 struct GameState
 {
-
 };
 
 GameState &GetGameState()
@@ -626,7 +579,6 @@ GameState &GetGameState()
 
 void gameinit()
 {
-
 }
 
 void updatebuffer(float dt)
