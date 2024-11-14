@@ -485,7 +485,6 @@ LRESULT CALLBACK EventHandler(HWND Window, UINT Msg, WPARAM WParam, LPARAM LPara
     }
     case WM_LBUTTONDOWN:
     {
-
         CurrentMouseState.buttonsclicked[0] = true;
         CurrentMouseState.buttonsheld[0] = true;
         break;
@@ -590,7 +589,7 @@ GameState &GetGameState()
 
 void gameinit()
 {
-
+    RandomColor(Buffer01);
 }
 
 void updatebuffer(float dt)
@@ -612,7 +611,7 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR StartCommand
     WindowClass.lpszClassName = "OakEngineWindowClass";
     if (RegisterClassA(&WindowClass))
     {
-        HWND WindowHandle = CreateWindowExA(0, WindowClass.lpszClassName, "OakEngine", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, 0, 0, heightofwindowinpixel * heightofpixel, widthofwindowinpixel * widthofpixel, 0, 0, Instance, 0);
+        HWND WindowHandle = CreateWindowExA(0, WindowClass.lpszClassName, "OakEngine", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE, 0, 0, widthofwindowinpixel * widthofpixel ,heightofwindowinpixel * heightofpixel, 0, 0, Instance, 0);
         if (WindowHandle)
         {
             gameinit();
