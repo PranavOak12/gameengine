@@ -29,6 +29,7 @@ enum Key
     KEY_8 = 0x38,
     KEY_9 = 0x39,
 
+
     KEY_A = 'A',
     KEY_B = 'B',
     KEY_C = 'C',
@@ -56,12 +57,13 @@ enum Key
     KEY_Y = 'Y',
     KEY_Z = 'Z',
 
+
     KEY_SHIFT = VK_SHIFT,  
     KEY_CTRL = VK_CONTROL, 
     KEY_ALT = VK_MENU,     
-
-    
     KEY_SPACE = VK_SPACE,  
+    
+    
     KEY_ESCAPE = VK_ESCAPE, 
     KEY_ENTER = VK_RETURN,  
     KEY_COUNT = 256         

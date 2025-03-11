@@ -1,5 +1,11 @@
-#include <bits/stdc++.h>
 #include <windows.h>
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <time.h>
+#include <chrono>
+
+#define M_PI		3.14159265358979323846
 
 using namespace std;
 
@@ -143,6 +149,7 @@ void SetPixel(OffScreenBuffer &Buffer, int x, int y, uint32_t color)
     uint32_t finalcolor = (finalcoloralpha << 24) | (finalcolorred << 16) | (finalcolorgreen << 8) | finalcolorblue;
     *pixel = finalcolor;
 }
+
 
 void RandomColor(OffScreenBuffer &Buffer)
 {
@@ -344,7 +351,7 @@ sprite *loadspritebmp(const string &filename)
     return NewSprite;
 }
 
-void drawonscreen(int x, int y, sprite *spritetodraw, OffScreenBuffer &Buffer01)
+void drawonscreen(int x, int y,sprite *spritetodraw, OffScreenBuffer &Buffer01)
 {
     uint32_t *temppointer;
     for (int i = 0; i < spritetodraw->height; i++)
@@ -356,6 +363,27 @@ void drawonscreen(int x, int y, sprite *spritetodraw, OffScreenBuffer &Buffer01)
             temppointer++;
             int targetx = x + j;
             int targety = y + i;
+            if ((targetx >= 0 && targetx < Buffer01.Width) && (targety >= 0 && targety < Buffer01.Height))
+            {
+                SetPixel(Buffer01, targetx, targety, colorp);
+            }
+        }
+    }
+}
+
+void drawonscreen(int x, int y,int rotationdegree,sprite *spritetodraw, OffScreenBuffer &Buffer01)
+{
+    uint32_t *temppointer;
+    float thet = M_PI/180.0 * rotationdegree;
+    for (int i = 0; i < spritetodraw->height; i++)
+    {
+        temppointer = spritetodraw->ptrtoimgdata + (i * spritetodraw->width);
+        for (int j = 0; j < spritetodraw->width; j++)
+        {
+            uint32_t colorp = *temppointer;
+            temppointer++;
+            int targetx = x + j*cos(thet) - i*sin(thet);
+            int targety = y + i*cos(thet) + j*sin(thet);
             if ((targetx >= 0 && targetx < Buffer01.Width) && (targety >= 0 && targety < Buffer01.Height))
             {
                 SetPixel(Buffer01, targetx, targety, colorp);
@@ -378,7 +406,7 @@ void ClearBuffer(OffScreenBuffer &Buffer)
 
 void ResizeDIBSection(OffScreenBuffer &Buffer, int Width, int Height)
 {
-    if (Buffer.Memory)
+    if(Buffer.Memory)
     {
         VirtualFree(Buffer.Memory, 0, MEM_RELEASE);
     }
@@ -551,7 +579,7 @@ void appenddata(string filename, void *ptrtomemory, int numberofbytes)
     }
 }
 
-void readdata(string filename, void *&ptrwheredatawillberead, int numberofbytes)
+void readdata(string filename, void*& ptrwheredatawillberead, int numberofbytes)
 {
     ptrwheredatawillberead = new char[numberofbytes];
     fstream file;
@@ -569,9 +597,10 @@ void readdata(string filename, void *&ptrwheredatawillberead, int numberofbytes)
 
 struct GameState
 {
+    
 };
 
-GameState &GetGameState()
+GameState& GetGameState()
 {
     static GameState state;
     return state;
@@ -579,6 +608,7 @@ GameState &GetGameState()
 
 void gameinit()
 {
+
 }
 
 void updatebuffer(float dt)
@@ -593,20 +623,17 @@ void updatebuffer(float dt)
 int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR StartCommand, int ShowCode)
 {
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
-
     int clientWidth = widthofpixel * widthofwindowinpixel;
     int clientHeight = heightofpixel * heightofwindowinpixel;
-
     WNDCLASSA WindowClass = {};
     WindowClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
     WindowClass.lpfnWndProc = EventHandler;
     WindowClass.hInstance = Instance;
     WindowClass.lpszClassName = "OakEngineWindowClass";
-
     if (RegisterClassA(&WindowClass))
     {
         RECT rect = {0, 0, clientWidth, clientHeight};
-        AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, FALSE);
+        AdjustWindowRect(&rect, WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, FALSE);
         int windowWidth = rect.right - rect.left;
         int windowHeight = rect.bottom - rect.top;
 
@@ -614,7 +641,7 @@ int WINAPI WinMain(HINSTANCE Instance, HINSTANCE PrevInstance, PSTR StartCommand
             0,
             WindowClass.lpszClassName,
             "OakEngine",
-            WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+            WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_VISIBLE,
             0, 0,
             windowWidth,
             windowHeight,
