@@ -2,6 +2,8 @@
     "files.associations": {
         "*.ejs": "html",
         "chrono": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "iosfwd": "cpp",
+        "iostream": "cpp"
     }
 }

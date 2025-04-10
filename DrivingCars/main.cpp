@@ -6,7 +6,7 @@
 #include <chrono>
 #include <cfloat>
 
-#define M_PI		3.14159265358979323846
+#define M_PI 3.14159265358979323846
 
 using namespace std;
 
@@ -106,8 +106,8 @@ static OffScreenBuffer Buffer01;
 
 int widthofpixel = 1;
 int heightofpixel = 1;
-int widthofwindowinpixel = 1000;
-int heightofwindowinpixel = 1000;
+const int widthofwindowinpixel = 1400;
+const int heightofwindowinpixel = 900;
 
 int screenxtobitmap(int screenxc)
 {
@@ -150,7 +150,6 @@ void SetPixel(OffScreenBuffer &Buffer, int x, int y, uint32_t color)
     uint32_t finalcolor = (finalcoloralpha << 24) | (finalcolorred << 16) | (finalcolorgreen << 8) | finalcolorblue;
     *pixel = finalcolor;
 }
-
 
 void RandomColor(OffScreenBuffer &Buffer)
 {
@@ -352,7 +351,6 @@ sprite *loadspritebmp(const string &filename)
     return NewSprite;
 }
 
-
 void drawonscreen(int x, int y, sprite *spritetodraw, OffScreenBuffer &Buffer01)
 {
     uint32_t *temppointer;
@@ -373,10 +371,10 @@ void drawonscreen(int x, int y, sprite *spritetodraw, OffScreenBuffer &Buffer01)
     }
 }
 
-void drawonscreen(int x, int y,int rotationdegree,sprite *spritetodraw, OffScreenBuffer &Buffer01)
+void drawonscreen(int x, int y, int rotationdegree, sprite *spritetodraw, OffScreenBuffer &Buffer01)
 {
     uint32_t *temppointer;
-    float thet = M_PI/180.0 * rotationdegree;
+    float thet = M_PI / 180.0 * rotationdegree;
     for (int i = 0; i < spritetodraw->height; i++)
     {
         temppointer = spritetodraw->ptrtoimgdata + (i * spritetodraw->width);
@@ -384,8 +382,8 @@ void drawonscreen(int x, int y,int rotationdegree,sprite *spritetodraw, OffScree
         {
             uint32_t colorp = *temppointer;
             temppointer++;
-            int targetx = x + j*cos(thet) - i*sin(thet);
-            int targety = y + i*cos(thet) + j*sin(thet);
+            int targetx = x + j * cos(thet) - i * sin(thet);
+            int targety = y + i * cos(thet) + j * sin(thet);
             if ((targetx >= 0 && targetx < Buffer01.Width) && (targety >= 0 && targety < Buffer01.Height))
             {
                 SetPixel(Buffer01, targetx, targety, colorp);
@@ -406,12 +404,11 @@ void drawonscreenwithcenter(int x, int y, int rotationdegree, sprite *spritetodr
     float cx = srcW / 2.0f;
     float cy = srcH / 2.0f;
 
-
     float corners[4][2] = {
-        {0.0f, 0.0f},           // top-left
-        {(float)srcW, 0.0f},    // top-right
+        {0.0f, 0.0f},               // top-left
+        {(float)srcW, 0.0f},        // top-right
         {(float)srcW, (float)srcH}, // bottom-right
-        {0.0f, (float)srcH}     // bottom-left
+        {0.0f, (float)srcH}         // bottom-left
     };
 
     float minX = FLT_MAX, maxX = -FLT_MAX;
@@ -422,23 +419,26 @@ void drawonscreenwithcenter(int x, int y, int rotationdegree, sprite *spritetodr
         float localX = corners[i][0] - cx;
         float localY = corners[i][1] - cy;
 
-        // Rotate
         float rotX = localX * cosTheta - localY * sinTheta;
         float rotY = localX * sinTheta + localY * cosTheta;
 
         float finalX = rotX + x;
         float finalY = rotY + y;
 
-        if (finalX < minX) minX = finalX;
-        if (finalX > maxX) maxX = finalX;
-        if (finalY < minY) minY = finalY;
-        if (finalY > maxY) maxY = finalY;
+        if (finalX < minX)
+            minX = finalX;
+        if (finalX > maxX)
+            maxX = finalX;
+        if (finalY < minY)
+            minY = finalY;
+        if (finalY > maxY)
+            maxY = finalY;
     }
 
     int startX = (int)std::floor(std::max(0.0f, minX));
-    int endX   = (int)std::ceil(std::min((float)Buffer01.Width - 1,  maxX));
+    int endX = (int)std::ceil(std::min((float)Buffer01.Width - 1, maxX));
     int startY = (int)std::floor(std::max(0.0f, minY));
-    int endY   = (int)std::ceil(std::min((float)Buffer01.Height - 1, maxY));
+    int endY = (int)std::ceil(std::min((float)Buffer01.Height - 1, maxY));
 
     for (int destY = startY; destY <= endY; destY++)
     {
@@ -447,8 +447,8 @@ void drawonscreenwithcenter(int x, int y, int rotationdegree, sprite *spritetodr
             float relX = (float)destX - x;
             float relY = (float)destY - y;
 
-            float srcX =  relX * cosTheta + relY * sinTheta  + cx;
-            float srcY = -relX * sinTheta + relY * cosTheta  + cy;
+            float srcX = relX * cosTheta + relY * sinTheta + cx;
+            float srcY = -relX * sinTheta + relY * cosTheta + cy;
 
             int sx = (int)std::floor(srcX + 0.5f);
             int sy = (int)std::floor(srcY + 0.5f);
@@ -460,12 +460,10 @@ void drawonscreenwithcenter(int x, int y, int rotationdegree, sprite *spritetodr
             }
             else
             {
-                // Optionally draw a background color or skip
             }
         }
     }
 }
-
 
 void ClearBuffer(OffScreenBuffer &Buffer)
 {
@@ -473,7 +471,7 @@ void ClearBuffer(OffScreenBuffer &Buffer)
     {
         for (int j = 0; j < Buffer.Width; j++)
         {
-            uint32_t blac = 0xff010101;
+            uint32_t blac = 0xffffffff;
             SetPixel(Buffer, j, i, blac);
         }
     }
@@ -481,7 +479,7 @@ void ClearBuffer(OffScreenBuffer &Buffer)
 
 void ResizeDIBSection(OffScreenBuffer &Buffer, int Width, int Height)
 {
-    if(Buffer.Memory)
+    if (Buffer.Memory)
     {
         VirtualFree(Buffer.Memory, 0, MEM_RELEASE);
     }
@@ -654,7 +652,7 @@ void appenddata(string filename, void *ptrtomemory, int numberofbytes)
     }
 }
 
-void readdata(string filename, void*& ptrwheredatawillberead, int numberofbytes)
+void readdata(string filename, void *&ptrwheredatawillberead, int numberofbytes)
 {
     ptrwheredatawillberead = new char[numberofbytes];
     fstream file;
@@ -670,12 +668,141 @@ void readdata(string filename, void*& ptrwheredatawillberead, int numberofbytes)
     }
 }
 
-struct GameState
+
+
+
+class Car
 {
-    
+    public:
+    float x = 0;
+    float y = 0;
+    float rotation = 0;
+    bool isColliding = 0;
+    float speed = 0;
+    float acceleration = 0;
+    sprite *carsprite;
+    Car()
+    {
+
+    }
+    void accelerate(float dt,float rate)
+    {
+        speed += dt * rate;
+        speed = max(speed,-6.0f);
+        speed = min(speed,10.0f);
+    }
+    void move(float dt)
+    {
+        float alpha = M_PI/180.0 * rotation;
+        x += cos(alpha) * speed;
+        y += sin(alpha) * speed;
+        if (speed > 0) {
+            speed -= 2 * dt;
+            if (speed < 0) speed = 0;
+        } else if (speed < 0) {
+            speed += 2 * dt;
+            if (speed > 0) speed = 0;
+        }
+    }
+    void turn(float dt, float rate) {
+        if (std::abs(speed) < 0.1f) return;
+        float effectiveTurn = dt * rate * (std::abs(speed) / 10.0f);
+        rotation += effectiveTurn;
+        if (rotation >= 360.0f)
+            rotation -= 360.0f;
+        if (rotation < 0.0f)
+            rotation += 360.0f;
+    }
+    void drawCar(bool** level)
+    {
+        float thet = rotation * M_PI / 180.0f;
+        float cosTheta = cos(thet);
+        float sinTheta = sin(thet);
+
+        int srcW = carsprite->width;
+        int srcH = carsprite->height;
+
+        float cx = srcW / 2.0f;
+        float cy = srcH / 2.0f;
+
+        float corners[4][2] = {
+            {0.0f, 0.0f},               
+            {(float)srcW, 0.0f},        
+            {(float)srcW, (float)srcH}, 
+            {0.0f, (float)srcH}         
+        };
+
+        float minX = FLT_MAX, maxX = -FLT_MAX;
+        float minY = FLT_MAX, maxY = -FLT_MAX;
+
+        for (int i = 0; i < 4; i++)
+        {
+            float localX = corners[i][0] - cx;
+            float localY = corners[i][1] - cy;
+
+            float rotX = localX * cosTheta - localY * sinTheta;
+            float rotY = localX * sinTheta + localY * cosTheta;
+
+            float finalX = rotX + x;
+            float finalY = rotY + y;
+
+            if (finalX < minX)
+                minX = finalX;
+            if (finalX > maxX)
+                maxX = finalX;
+            if (finalY < minY)
+                minY = finalY;
+            if (finalY > maxY)
+                maxY = finalY;
+        }
+
+        int startX = (int)std::floor(std::max(0.0f, minX));
+        int endX = (int)std::ceil(std::min((float)Buffer01.Width - 1, maxX));
+        int startY = (int)std::floor(std::max(0.0f, minY));
+        int endY = (int)std::ceil(std::min((float)Buffer01.Height - 1, maxY));
+
+        for (int destY = startY; destY <= endY; destY++)
+        {
+            for (int destX = startX; destX <= endX; destX++)
+            {
+                float relX = (float)destX - x;
+                float relY = (float)destY - y;
+
+                float srcX = relX * cosTheta + relY * sinTheta + cx;
+                float srcY = -relX * sinTheta + relY * cosTheta + cy;
+
+                int sx = (int)std::floor(srcX + 0.5f);
+                int sy = (int)std::floor(srcY + 0.5f);
+
+                if (sx >= 0 && sx < srcW && sy >= 0 && sy < srcH)
+                {
+                    uint32_t colorp = carsprite->ptrtoimgdata[sy * srcW + sx];
+                    if(colorp == 0)
+                    {
+                        cout << "Empty" << endl;
+                    }
+                    if ((isColliding== 0) and (colorp > 0) and (level[destX][destY]))
+                    {
+                        isColliding = 1;
+                    }
+                    SetPixel(Buffer01, destX, destY, colorp);
+                }
+                else
+                {
+                }
+            }
+        }
+    }
 };
 
-GameState& GetGameState()
+struct GameState
+{
+    sprite* carbmp = loadspritebmp("car.bmp");
+    Car test;
+    bool** collisionmask = new bool*[widthofwindowinpixel];
+};
+
+GameState &GetGameState()
 {
     static GameState state;
     return state;
@@ -683,13 +810,39 @@ GameState& GetGameState()
 
 void gameinit()
 {
-
+    GameState& gs = GetGameState();
+    gs.test.carsprite = gs.carbmp;
+    gs.test.x = 200;
+    gs.test.y = 200;
+    for(int i = 0;i < widthofwindowinpixel;i++)
+    {
+        gs.collisionmask[i] = new bool[heightofpixel]();
+    }
+    gs.test.drawCar(gs.collisionmask);
 }
 
 void updatebuffer(float dt)
 {
+    GameState& gs = GetGameState();
     ClearBuffer(Buffer01);
-    GameState gs = GetGameState();
+    if(KeyHeld[KEY_W])
+    {
+        gs.test.accelerate(dt,8);
+    }
+    if(KeyHeld[KEY_S])
+    {
+        gs.test.accelerate(dt,-7);
+    }
+    if(KeyHeld[KEY_D])
+    {
+        gs.test.turn(dt,100);
+    }
+    if(KeyHeld[KEY_A])
+    {
+        gs.test.turn(dt,-100);
+    }
+    gs.test.move(dt);
+    gs.test.drawCar(gs.collisionmask);
     CurrentMouseState.ResetMouseStates();
     memset(KeyPressed, 0, sizeof(KeyPressed));
     memset(KeyReleased, 0, sizeof(KeyReleased));
