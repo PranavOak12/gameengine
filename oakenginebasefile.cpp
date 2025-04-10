@@ -127,28 +127,35 @@ uint32_t GetColorByRGBA(uint8_t red, uint8_t green, uint8_t blue, uint8_t alpha 
 
 void SetPixel(OffScreenBuffer &Buffer, int x, int y, uint32_t color)
 {
-    if (x < 0 || x >= Buffer.Width || y < 0 || y >= Buffer.Height)
-    {
-        return;
+    if (x < 0 || x >= Buffer.Width || y < 0 || y >= Buffer.Height) return;
+
+    uint32_t *pixel = (uint32_t *)Buffer.Memory + y * Buffer.Width + x;
+
+    uint8_t alpha = (color >> 24) & 0xff;
+
+    if (alpha == 255) {
+        // Fast path: full opaque, no blending needed
+        *pixel = color;
+    } else {
+        // Read current pixel
+        uint32_t dst = *pixel;
+
+        uint8_t dstB = dst & 0xff;
+        uint8_t dstG = (dst >> 8) & 0xff;
+        uint8_t dstR = (dst >> 16) & 0xff;
+
+        uint8_t srcB = color & 0xff;
+        uint8_t srcG = (color >> 8) & 0xff;
+        uint8_t srcR = (color >> 16) & 0xff;
+
+        float a = alpha / 255.0f;
+
+        uint8_t outB = (uint8_t)((srcB * a) + (dstB * (1.0f - a)));
+        uint8_t outG = (uint8_t)((srcG * a) + (dstG * (1.0f - a)));
+        uint8_t outR = (uint8_t)((srcR * a) + (dstR * (1.0f - a)));
+
+        *pixel = (255 << 24) | (outR << 16) | (outG << 8) | outB;
     }
-    uint32_t *pixel = (uint32_t *)Buffer.Memory;
-    pixel += y * Buffer.Width + x;
-    uint8_t *extract = (uint8_t *)pixel;
-    uint8_t bufferblue = *(extract++);
-    uint8_t buffergreen = *(extract++);
-    uint8_t bufferred = *(extract++);
-    uint8_t bufferalpha = 255;
-    uint8_t colorblue = color & 0xff;
-    uint8_t colorgreen = (color >> 8) & 0xff;
-    uint8_t colorred = (color >> 16) & 0xff;
-    uint8_t coloralpha = (color >> 24) & 0xff;
-    float alpha = coloralpha / 255.0f;
-    uint8_t finalcolorblue = (uint8_t)((alpha * colorblue) + ((1 - alpha) * bufferblue));
-    uint8_t finalcolorgreen = (uint8_t)((alpha * colorgreen) + ((1 - alpha) * buffergreen));
-    uint8_t finalcolorred = (uint8_t)((alpha * colorred) + ((1 - alpha) * bufferred));
-    uint8_t finalcoloralpha = 255;
-    uint32_t finalcolor = (finalcoloralpha << 24) | (finalcolorred << 16) | (finalcolorgreen << 8) | finalcolorblue;
-    *pixel = finalcolor;
 }
 
 
