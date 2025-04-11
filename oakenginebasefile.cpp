@@ -696,7 +696,7 @@ void gameinit()
 void updatebuffer(float dt)
 {
     ClearBuffer(Buffer01);
-    GameState gs = GetGameState();
+    GameState& gs = GetGameState();
     CurrentMouseState.ResetMouseStates();
     memset(KeyPressed, 0, sizeof(KeyPressed));
     memset(KeyReleased, 0, sizeof(KeyReleased));
